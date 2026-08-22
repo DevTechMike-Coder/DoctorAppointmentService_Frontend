@@ -1,75 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Stethoscope } from "lucide-react";
-
-const PLACEHOLDER_DOCTORS = [
-  {
-    id: 1,
-    fullName: "Dr. Amara Chen",
-    specialization: "Cardiology",
-    qualifications: "MD, FACC",
-    bio: "15 years treating complex cardiac conditions with a focus on preventive care.",
-    consultationFee: 120,
-  },
-  {
-    id: 2,
-    fullName: "Dr. Femi Okonkwo",
-    specialization: "Dermatology",
-    qualifications: "MD",
-    bio: "Specializes in adult and pediatric skin conditions, acne, and eczema.",
-    consultationFee: 90,
-  },
-  {
-    id: 3,
-    fullName: "Dr. Priya Nair",
-    specialization: "Pediatrics",
-    qualifications: "MD, FAAP",
-    bio: "Gentle, thorough care for infants through teens. Parents welcome to ask anything.",
-    consultationFee: 80,
-  },
-  {
-    id: 4,
-    fullName: "Dr. Marcus Webb",
-    specialization: "Orthopedics",
-    qualifications: "MD, MS",
-    bio: "Sports injuries, joint pain, and post-surgical rehabilitation planning.",
-    consultationFee: 110,
-  },
-  {
-    id: 5,
-    fullName: "Dr. Lena Kovacs",
-    specialization: "General Practice",
-    qualifications: "MBBS",
-    bio: "Your first stop for check-ups, referrals, and everyday health concerns.",
-    consultationFee: 60,
-  },
-  {
-    id: 6,
-    fullName: "Dr. Tunde Bakare",
-    specialization: "Psychiatry",
-    qualifications: "MD",
-    bio: "Focused, judgment-free care for anxiety, mood, and sleep concerns.",
-    consultationFee: 130,
-  },
-];
-
-const SPECIALTIES = ["All", "Cardiology", "Dermatology", "Pediatrics", "Orthopedics", "General Practice", "Psychiatry"];
+import { useDoctors } from "@/hooks/useDoctors";
+import type { DoctorDto } from "@/lib/types";
 
 export default function DoctorsPage() {
+  const router = useRouter();
+  const { doctors, loading, error } = useDoctors();
   const [query, setQuery] = useState("");
   const [activeSpecialty, setActiveSpecialty] = useState("All");
 
+  const specialties = ["All", ...Array.from(new Set(doctors.map((d) => d.specialization)))];
+
+  const filtered = doctors.filter((d) => {
+    const matchesQuery =
+      query.trim() === "" ||
+      d.fullName.toLowerCase().includes(query.toLowerCase()) ||
+      d.specialization.toLowerCase().includes(query.toLowerCase());
+    const matchesSpecialty = activeSpecialty === "All" || d.specialization === activeSpecialty;
+    return matchesQuery && matchesSpecialty;
+  });
+
   return (
     <div className="min-h-screen bg-canvas">
-      {/* Top bar */}
       <header className="border-b border-ink/10 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <span className="font-display text-xl text-ink">MedBook</span>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-dark text-xs font-medium">
-              JD
-            </div>
+          <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-dark text-xs font-medium">
+            JD
           </div>
         </div>
       </header>
@@ -82,7 +42,6 @@ export default function DoctorsPage() {
           </p>
         </div>
 
-        {/* Search */}
         <div className="relative mb-5">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input
@@ -94,47 +53,69 @@ export default function DoctorsPage() {
           />
         </div>
 
-        {/* Specialty filter chips */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          {SPECIALTIES.map((s) => (
-            <button
-              key={s}
-              onClick={() => setActiveSpecialty(s)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
-                activeSpecialty === s
-                  ? "bg-teal text-white"
-                  : "bg-white text-ink/60 border border-ink/10 hover:border-ink/25"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        {specialties.length > 1 && (
+          <div className="flex flex-wrap gap-2 mb-8">
+            {specialties.map((s) => (
+              <button
+                key={s}
+                onClick={() => setActiveSpecialty(s)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
+                  activeSpecialty === s
+                    ? "bg-teal text-white"
+                    : "bg-white text-ink/60 border border-ink/10 hover:border-ink/25"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Doctor grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {PLACEHOLDER_DOCTORS.map((doc) => (
-            <DoctorCard key={doc.id} doctor={doc} />
-          ))}
-        </div>
+        {loading && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-ink/10 p-5 animate-pulse">
+                <div className="w-11 h-11 rounded-full bg-ink/5 mb-3.5" />
+                <div className="h-4 bg-ink/5 rounded w-2/3 mb-2" />
+                <div className="h-3 bg-ink/5 rounded w-1/2 mb-3" />
+                <div className="h-3 bg-ink/5 rounded w-full" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="bg-white rounded-xl border border-rust/20 py-16 text-center">
+            <p className="text-sm text-rust">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
+          <div className="bg-white rounded-xl border border-ink/10 py-16 text-center">
+            <p className="text-sm text-ink/40">No doctors match your search.</p>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length > 0 && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filtered.map((doc) => (
+              <DoctorCard key={doc.id} doctor={doc} onClick={() => router.push(`/doctors/${doc.id}`)} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function DoctorCard({
-  doctor,
-}: {
-  doctor: (typeof PLACEHOLDER_DOCTORS)[number];
-}) {
-  const initials = doctor.fullName
-    .replace("Dr. ", "")
-    .split(" ")
-    .map((n) => n[0])
-    .join("");
+function DoctorCard({ doctor, onClick }: { doctor: DoctorDto; onClick: () => void }) {
+  const initials = doctor.fullName.replace("Dr. ", "").split(" ").map((n) => n[0]).join("");
 
   return (
-    <button className="text-left bg-white rounded-xl border border-ink/10 p-5 hover:border-teal/40 hover:shadow-sm transition group">
+    <button
+      onClick={onClick}
+      className="text-left bg-white rounded-xl border border-ink/10 p-5 hover:border-teal/40 hover:shadow-sm transition group"
+    >
       <div className="flex items-start justify-between mb-3.5">
         <div className="w-11 h-11 rounded-full bg-teal-light text-teal-dark font-display text-sm flex items-center justify-center">
           {initials}
@@ -151,12 +132,12 @@ function DoctorCard({
       <div className="flex items-center gap-1.5 text-xs text-teal font-medium mb-2.5">
         <Stethoscope className="w-3.5 h-3.5" />
         {doctor.specialization}
-        <span className="text-ink/30 font-normal">· {doctor.qualifications}</span>
+        {doctor.qualifications && (
+          <span className="text-ink/30 font-normal">· {doctor.qualifications}</span>
+        )}
       </div>
 
-      <p className="text-sm text-ink/55 leading-relaxed line-clamp-2">
-        {doctor.bio}
-      </p>
+      <p className="text-sm text-ink/55 leading-relaxed line-clamp-2">{doctor.bio}</p>
     </button>
   );
 }
