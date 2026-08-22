@@ -2,14 +2,27 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // wiring comes later
+    setError(null);
+    setSubmitting(true);
+    try {
+      await login({ email, password });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't sign in. Try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -79,11 +92,21 @@ export default function LoginPage() {
               />
             </div>
 
+            {error && (
+              <p
+                role="alert"
+                className="text-sm text-rust bg-rust/5 border border-rust/20 rounded-lg px-3.5 py-2.5"
+              >
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="w-full rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-medium py-2.5 transition"
+              disabled={submitting}
+              className="w-full rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 transition"
             >
-              Sign in
+              {submitting ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
