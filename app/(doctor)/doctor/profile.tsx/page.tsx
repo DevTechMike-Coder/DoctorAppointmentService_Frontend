@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Camera, Stethoscope } from "lucide-react";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { DoctorDto } from "@/lib/types";
 
 const SPECIALTIES = [
   "Cardiology",
@@ -22,10 +24,50 @@ export default function DoctorProfilePage() {
     "15 years treating complex cardiac conditions with a focus on preventive care."
   );
   const [consultationFee, setConsultationFee] = useState("120");
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    async function load() {
+      try {
+        const doctorData = await apiFetch<DoctorDto>("/doctors/me");
+        if (doctorData) {
+          setFullName(doctorData.fullName);
+          setSpecialization(doctorData.specialization);
+          setQualifications(doctorData.qualifications || "");
+          setBio(doctorData.bio || "");
+          setConsultationFee(String(doctorData.consultationFee));
+        }
+      } catch {
+        // Fallback to initial values
+      }
+    }
+    load();
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // wiring comes later
+    setSaving(true);
+    setSaveSuccess(false);
+    setError(null);
+    try {
+      await apiFetch("/doctors/profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          fullName,
+          specialization,
+          qualifications,
+          bio,
+          consultationFee: Number(consultationFee),
+        }),
+      });
+      setSaveSuccess(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't save changes.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const initials = fullName.replace("Dr. ", "").split(" ").map((n) => n[0]).join("");
@@ -45,7 +87,7 @@ export default function DoctorProfilePage() {
         <div className="mb-8">
           <h1 className="font-display text-3xl text-ink mb-1.5">Your profile</h1>
           <p className="text-ink/60 text-sm">
-            This is what patients see when they're deciding to book with you.
+            This is what patients see when they&apos;re deciding to book with you.
           </p>
         </div>
 
@@ -159,12 +201,24 @@ export default function DoctorProfilePage() {
               </div>
             </div>
 
+            {error && (
+              <p role="alert" className="text-sm text-rust bg-rust/5 border border-rust/20 rounded-lg px-3.5 py-2.5">
+                {error}
+              </p>
+            )}
+            {saveSuccess && (
+              <p className="text-sm text-teal-dark bg-teal-light border border-teal/20 rounded-lg px-3.5 py-2.5">
+                Changes saved successfully!
+              </p>
+            )}
+
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                className="rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-medium px-6 py-2.5 transition"
+                disabled={saving}
+                className="rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-6 py-2.5 transition"
               >
-                Save changes
+                {saving ? "Saving…" : "Save changes"}
               </button>
             </div>
           </form>

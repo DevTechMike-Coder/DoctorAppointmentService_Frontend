@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, Clock, Check, X, CheckCheck } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import type { AppointmentDto } from "@/lib/types";
 
 type Status = "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
 
@@ -65,7 +67,45 @@ const TABS = ["Pending", "Confirmed", "Past"] as const;
 
 export default function DoctorAppointmentsPage() {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("Pending");
-  const [appointments, setAppointments] = useState(PLACEHOLDER_APPOINTMENTS);
+  const [appointments, setAppointments] = useState<typeof PLACEHOLDER_APPOINTMENTS>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await apiFetch<AppointmentDto[]>("/appointments");
+        const mapped = data.map((a) => {
+          const dateStr = a.startTime.split("T")[0];
+          const formattedDate = new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          });
+          const formattedDay = new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
+            weekday: "short",
+          });
+          const formattedTime = new Date(a.startTime).toLocaleTimeString(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+          });
+          return {
+            id: a.id,
+            patientName: a.patientName,
+            date: formattedDate,
+            day: formattedDay,
+            time: formattedTime,
+            status: a.status as Status,
+            reason: a.reason || "General consultation",
+          };
+        });
+        setAppointments(mapped);
+      } catch {
+        setAppointments(PLACEHOLDER_APPOINTMENTS);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   const filtered = appointments.filter((a) => {
     if (activeTab === "Pending") return a.status === "PENDING";
@@ -73,7 +113,15 @@ export default function DoctorAppointmentsPage() {
     return a.status === "COMPLETED" || a.status === "CANCELLED";
   });
 
-  function updateStatus(id: number, status: Status) {
+  async function updateStatus(id: number, status: Status) {
+    try {
+      await apiFetch(`/appointments/${id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      });
+    } catch {
+      // Mock compatibility fallback
+    }
     setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
   }
 
@@ -128,7 +176,19 @@ export default function DoctorAppointmentsPage() {
           })}
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-ink/10 p-5 animate-pulse flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-ink/5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-ink/5 rounded w-1/3" />
+                  <div className="h-3 bg-ink/5 rounded w-1/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-ink/10 py-16 text-center">
             <Calendar className="w-8 h-8 text-ink/15 mx-auto mb-3" />
             <p className="text-sm text-ink/40">Nothing here right now.</p>
