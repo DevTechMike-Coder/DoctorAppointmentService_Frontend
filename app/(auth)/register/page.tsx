@@ -2,22 +2,45 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/lib/api";
 
 export default function RegisterPage() {
+  const { register } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"PATIENT" | "DOCTOR">("PATIENT");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // wiring comes later
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords don't match.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await register({ fullName, email, password, role });
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Couldn't create your account. Try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <div className="min-h-screen bg-canvas grid lg:grid-cols-2">
-      {/* Brand panel */}
+      {/* Brand panel — unchanged from before */}
       <div className="hidden lg:flex flex-col justify-between bg-ink text-canvas px-16 py-14 relative overflow-hidden">
         <SlotPattern />
         <div className="relative z-10">
@@ -44,15 +67,18 @@ export default function RegisterPage() {
             <span className="font-display text-2xl text-ink">MedBook</span>
           </div>
 
-          <h2 className="font-display text-3xl text-ink mb-2">Create your account</h2>
+          <h2 className="font-display text-3xl text-ink mb-2">
+            Create your account
+          </h2>
           <p className="text-ink/60 text-sm mb-8">
             Tell us a little about you to get started.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Role toggle */}
             <div>
-              <span className="block text-sm font-medium text-ink mb-1.5">I am a</span>
+              <span className="block text-sm font-medium text-ink mb-1.5">
+                I am a
+              </span>
               <div className="grid grid-cols-2 gap-2 rounded-lg bg-ink/5 p-1">
                 <button
                   type="button"
@@ -80,7 +106,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-ink mb-1.5">
+              <label
+                htmlFor="fullName"
+                className="block text-sm font-medium text-ink mb-1.5"
+              >
                 Full name
               </label>
               <input
@@ -96,7 +125,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-ink mb-1.5">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-ink mb-1.5"
+              >
                 Email
               </label>
               <input
@@ -113,13 +145,18 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-ink mb-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-ink mb-1.5"
+                >
                   Password
                 </label>
                 <input
                   id="password"
                   type="password"
                   required
+                  minLength={8}
+                  maxLength={72}
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -128,7 +165,10 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink mb-1.5">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-ink mb-1.5"
+                >
                   Confirm
                 </label>
                 <input
@@ -145,20 +185,33 @@ export default function RegisterPage() {
             </div>
 
             <p className="text-xs text-ink/40 leading-relaxed">
-              Min 8 characters. Use a passphrase you don't reuse elsewhere.
+              8–72 characters. Use a passphrase you don't reuse elsewhere.
             </p>
+
+            {error && (
+              <p
+                role="alert"
+                className="text-sm text-rust bg-rust/5 border border-rust/20 rounded-lg px-3.5 py-2.5"
+              >
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-medium py-2.5 transition"
+              disabled={submitting}
+              className="w-full rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 transition"
             >
-              Create account
+              {submitting ? "Creating account…" : "Create account"}
             </button>
           </form>
 
           <p className="mt-8 text-sm text-ink/60 text-center">
             Already have an account?{" "}
-            <Link href="/login" className="text-teal font-medium hover:text-teal-dark">
+            <Link
+              href="/login"
+              className="text-teal font-medium hover:text-teal-dark"
+            >
               Sign in
             </Link>
           </p>
@@ -168,7 +221,6 @@ export default function RegisterPage() {
   );
 }
 
-/** Signature element: a quiet grid of dots standing in for a calendar of open slots. */
 function SlotPattern() {
   const dots = Array.from({ length: 48 });
   return (

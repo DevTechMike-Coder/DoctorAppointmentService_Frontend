@@ -2,14 +2,27 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // wiring comes later
+    setError(null);
+    setSubmitting(true);
+    try {
+      await login({ email, password });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't sign in. Try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
