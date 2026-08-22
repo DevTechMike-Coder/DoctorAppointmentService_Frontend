@@ -51,7 +51,7 @@ export default function RegisterPage() {
             Set up in under a minute.
           </h1>
           <p className="text-canvas/70 text-sm leading-relaxed">
-            Whether you're booking a visit or filling your calendar, your
+            Whether you&apos;re booking a visit or filling your calendar, your
             account gets you there — no paperwork, no phone tag.
           </p>
         </div>
@@ -185,7 +185,7 @@ export default function RegisterPage() {
             </div>
 
             <p className="text-xs text-ink/40 leading-relaxed">
-              8–72 characters. Use a passphrase you don't reuse elsewhere.
+              8–72 characters. Use a passphrase you don&apos;t reuse elsewhere.
             </p>
 
             {error && (
