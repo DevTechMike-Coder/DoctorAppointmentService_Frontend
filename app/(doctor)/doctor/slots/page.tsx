@@ -25,10 +25,10 @@ export default function SlotsPage() {
     return acc;
   }, {});
 
-  async function handleDelete(slotId: number) {
-    setDeletingId(slotId);
+  async function handleDelete(id: number) {
+    setDeletingId(id);
     try {
-      await deleteSlot(slotId);
+      await deleteSlot(id);
     } catch {
       // stays in list, user can retry
     } finally {
@@ -119,7 +119,7 @@ export default function SlotsPage() {
                 <div className="grid sm:grid-cols-2 gap-2.5">
                   {daySlots.map((slot) => (
                     <div
-                      key={slot.slotId}
+                      key={slot.id}
                       className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
                         slot.isBooked ? "bg-teal-light/40 border-teal/20" : "bg-white border-ink/10"
                       }`}
@@ -137,8 +137,8 @@ export default function SlotsPage() {
                       </div>
                       {!slot.isBooked && (
                         <button
-                          onClick={() => handleDelete(slot.slotId)}
-                          disabled={deletingId === slot.slotId}
+                          onClick={() => handleDelete(slot.id)}
+                          disabled={deletingId === slot.id}
                           className="w-7 h-7 rounded-full flex items-center justify-center text-ink/30 hover:text-rust hover:bg-rust/5 transition disabled:opacity-40"
                           title="Remove slot"
                         >
