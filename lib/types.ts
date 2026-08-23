@@ -22,6 +22,7 @@ export interface AuthResponse {
 
 export interface DoctorDto {
   id: number;
+  userId: number;
   fullName: string;
   specialization: string;
   qualifications: string;
@@ -29,17 +30,33 @@ export interface DoctorDto {
   consultationFee: number;
 }
 
+/** Payload for PUT /doctors/profile — backend accepts a DoctorDto-shaped body. */
+export interface UpdateDoctorProfileRequest {
+  specialization: string;
+  qualifications: string;
+  bio: string;
+  consultationFee: number;
+  fullName?: string;
+}
+
 export interface AvailabilityDto {
   id: number;
   doctorId: number;
   doctorName: string;
-  startTime: string; // ISO
+  startTime: string; // ISO LocalDateTime, e.g. "2026-08-23T10:00:00"
   endTime: string;
   isBooked: boolean;
 }
 
+/** Matches backend CreateSlotRequest — one slot per request. */
+export interface CreateSlotRequest {
+  startTime: string;
+  endTime: string;
+}
+
+/** Matches backend BookAppointmentRequest record: { slotId, reason }. */
 export interface BookAppointmentRequest {
-  id: number;
+  slotId: number;
   reason?: string;
 }
 

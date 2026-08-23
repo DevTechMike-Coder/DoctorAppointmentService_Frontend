@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { Calendar, Clock, Check, X, CheckCheck } from "lucide-react";
 import { useDoctorProfile } from "@/hooks/useDoctorProfile";
 import { useDoctorAppointments } from "@/hooks/useDoctorAppointments";
+import { useToast } from "@/components/Toast";
+import { ApiError } from "@/lib/api";
 import type { AppointmentDto, AppointmentStatus } from "@/lib/types";
 
 const TABS = ["Pending", "Confirmed", "Past"] as const;
@@ -13,6 +16,7 @@ export default function DoctorAppointmentsPage() {
   const { appointments, loading, error, updateStatus } = useDoctorAppointments(
     profile?.id ?? null,
   );
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("Pending");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
@@ -22,43 +26,55 @@ export default function DoctorAppointmentsPage() {
     return a.status === "COMPLETED" || a.status === "CANCELLED";
   });
 
+  const STATUS_TOAST: Record<AppointmentStatus, string> = {
+    CONFIRMED: "Appointment confirmed.",
+    CANCELLED: "Appointment cancelled.",
+    COMPLETED: "Marked as completed.",
+    PENDING: "Appointment updated.",
+  };
+
   async function handleUpdate(id: number, status: AppointmentStatus) {
     setUpdatingId(id);
     try {
       await updateStatus(id, status);
-    } catch {
-      // stays as-is, doctor can retry
+      toast.success(STATUS_TOAST[status]);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't update. Try again.");
     } finally {
       setUpdatingId(null);
     }
   }
 
-  const initials =
-    profile?.fullName
-      ?.replace("Dr. ", "")
-      .split(" ")
-      .map((n) => n[0])
-      .join("") ?? "DR";
-
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center">
+      <div className="flex items-center justify-center py-32">
         <p className="text-sm text-ink/40">Loading…</p>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-ink/10 bg-white">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="font-display text-xl text-ink">MedBook</span>
-          <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-dark text-xs font-medium">
-            {initials}
-          </div>
+  // Onboarding: a fresh doctor account has no profile yet.
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center py-32 px-6">
+        <div className="text-center max-w-sm">
+          <p className="font-display text-xl text-ink mb-2">Welcome to MedBook</p>
+          <p className="text-sm text-ink/60 mb-5">
+            Set up your doctor profile so patients can find and book with you.
+          </p>
+          <Link
+            href="/doctor/profile"
+            className="inline-block rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-medium px-5 py-2.5 transition"
+          >
+            Set up your profile
+          </Link>
         </div>
-      </header>
+      </div>
+    );
+  }
 
+  return (
+    <div>
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
           <h1 className="font-display text-3xl text-ink mb-1.5">

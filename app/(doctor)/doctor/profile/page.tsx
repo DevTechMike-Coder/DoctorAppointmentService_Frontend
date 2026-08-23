@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
 import { Camera, Stethoscope } from "lucide-react";
 import { useDoctorProfile } from "@/hooks/useDoctorProfile";
+import { useToast } from "@/components/Toast";
 import { ApiError } from "@/lib/api";
 
 const SPECIALTIES = [
@@ -18,6 +20,7 @@ const SPECIALTIES = [
 
 export default function DoctorProfilePage() {
   const { profile, loading, error, saveProfile } = useDoctorProfile();
+  const toast = useToast();
 
   const [fullName, setFullName] = useState("");
   const [specialization, setSpecialization] = useState(SPECIALTIES[0]);
@@ -54,9 +57,12 @@ export default function DoctorProfilePage() {
         consultationFee: Number(consultationFee),
       });
       setSaved(true);
+      toast.success("Profile saved.");
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : "Couldn't save your profile.");
+      const message = err instanceof ApiError ? err.message : "Couldn't save your profile.";
+      setSaveError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -66,23 +72,14 @@ export default function DoctorProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center">
+      <div className="flex items-center justify-center py-32">
         <p className="text-sm text-ink/40">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-ink/10 bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="font-display text-xl text-ink">MedBook</span>
-          <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-dark text-xs font-medium">
-            {initials}
-          </div>
-        </div>
-      </header>
-
+    <div>
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8">
           <h1 className="font-display text-3xl text-ink mb-1.5">Your profile</h1>
@@ -224,7 +221,6 @@ export default function DoctorProfilePage() {
                 disabled={saving}
                 className="rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 text-white text-sm font-medium px-6 py-2.5 transition"
               >
-                {saving ? "Saving…" : "Save changes"}
                 {saving ? "Saving…" : "Save changes"}
               </button>
             </div>

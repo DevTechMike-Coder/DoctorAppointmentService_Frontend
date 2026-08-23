@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -13,10 +14,10 @@ export function useAppointments() {
     setLoading(true);
     setError(null);
     try {
-      // Pass signal into apiFetch options so the fetch request actually aborts
       const data = await apiFetch<AppointmentDto[]>("/appointments/me", { signal });
       if (!signal?.aborted) setAppointments(data);
-    } catch (err: any) {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       if (!signal?.aborted) {
         setError(err instanceof ApiError ? err.message : "Couldn't load appointments.");
       }
@@ -33,7 +34,11 @@ export function useAppointments() {
 
   const cancelAppointment = async (id: number): Promise<void> => {
     await apiFetch(`/appointments/${id}`, { method: "DELETE" });
-    setAppointments((prev) => prev.filter((a) => a.id !== id));
+    // The backend cancels (not deletes) the appointment — reflect that so it
+    // shows up under the "Cancelled" tab instead of disappearing.
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, status: "CANCELLED" } : a))
+    );
   };
 
   const bookAppointment = async (payload: BookAppointmentRequest): Promise<AppointmentDto> => {

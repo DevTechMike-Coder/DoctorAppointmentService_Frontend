@@ -3,15 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2, Calendar as CalendarIcon, X } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { useAvailability } from "@/hooks/useAvailability";
 import { useDoctorProfile } from "@/hooks/useDoctorProfile";
+import { useToast } from "@/components/Toast";
 import { ApiError } from "@/lib/api";
 
 export default function SlotsPage() {
-  const { user } = useAuth();
   const { profile, loading: profileLoading } = useDoctorProfile();
   const { slots, loading, error, deleteSlot, createSlots } = useAvailability(profile?.id ?? null);
+  const toast = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -29,20 +29,18 @@ export default function SlotsPage() {
     setDeletingId(id);
     try {
       await deleteSlot(id);
-    } catch {
-      // stays in list, user can retry
+      toast.success("Slot removed.");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't remove slot.");
     } finally {
       setDeletingId(null);
     }
   }
 
-  const initials =
-    user?.fullName?.replace("Dr. ", "").split(" ").map((n) => n[0]).join("") ?? "DR";
-
   // Still resolving the doctor's profile — block on this first
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center">
+      <div className="flex items-center justify-center py-32">
         <p className="text-sm text-ink/40">Loading…</p>
       </div>
     );
@@ -51,7 +49,7 @@ export default function SlotsPage() {
   // No profile yet — can't manage slots without one
   if (!profile) {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center px-6">
+      <div className="flex items-center justify-center py-32 px-6">
         <div className="text-center max-w-sm">
           <p className="text-sm text-ink/60 mb-4">
             Set up your doctor profile before adding availability.
@@ -65,16 +63,7 @@ export default function SlotsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-ink/10 bg-white">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="font-display text-xl text-ink">MedBook</span>
-          <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-dark text-xs font-medium">
-            {initials}
-          </div>
-        </div>
-      </header>
-
+    <div>
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="flex items-start justify-between mb-8">
           <div>
@@ -155,7 +144,16 @@ export default function SlotsPage() {
       </div>
 
       {showAddModal && (
-        <AddSlotsModal onClose={() => setShowAddModal(false)} onCreate={createSlots} />
+        <AddSlotsModal
+          onClose={() => setShowAddModal(false)}
+          onCreate={async (payload) => {
+            const created = await createSlots(payload);
+            toast.success(
+              created.length === 1 ? "1 slot added." : `${created.length} slots added.`
+            );
+            return created;
+          }}
+        />
       )}
     </div>
   );
@@ -194,7 +192,13 @@ function AddSlotsModal({
       });
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't add slots.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Couldn't add slots."
+      );
     } finally {
       setSubmitting(false);
     }

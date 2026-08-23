@@ -5,13 +5,16 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Stethoscope, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 import { useDoctors } from "@/hooks/useDoctors";
+import { useToast } from "@/components/Toast";
 import { apiFetch, ApiError } from "@/lib/api";
+import { dateKey, formatTime, formatDayLabel } from "@/lib/datetime";
 import type { DoctorDto, AvailabilityDto } from "@/lib/types";
 
 export default function DoctorProfilePage() {
   const { doctorId } = useParams<{ doctorId: string }>();
   const router = useRouter();
   const { fetchDoctorSlots } = useDoctors();
+  const toast = useToast();
 
   const [doctor, setDoctor] = useState<DoctorDto | null>(null);
   const [slots, setSlots] = useState<AvailabilityDto[]>([]);
@@ -60,9 +63,12 @@ export default function DoctorProfilePage() {
         body: JSON.stringify({ slotId: selectedSlotId, reason: reason || undefined }),
       });
       setBookingSuccess(true);
+      toast.success("Appointment booked!");
       setTimeout(() => router.push("/appointments"), 1200);
     } catch (err) {
-      setBookingError(err instanceof ApiError ? err.message : "Couldn't book this slot.");
+      const message = err instanceof ApiError ? err.message : "Couldn't book this slot.";
+      setBookingError(message);
+      toast.error(message);
     } finally {
       setBooking(false);
     }
@@ -80,17 +86,15 @@ export default function DoctorProfilePage() {
   const selectedSlot = slots.find((s) => s.id === selectedSlotId);
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-ink/10 bg-white">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <Link href="/doctors" className="inline-flex items-center gap-1.5 text-sm text-ink/60 hover:text-ink transition">
-            <ArrowLeft className="w-4 h-4" />
-            Back to doctors
-          </Link>
-        </div>
-      </header>
+    <div>
+      <div className="max-w-5xl mx-auto px-6 pt-6">
+        <Link href="/doctors" className="inline-flex items-center gap-1.5 text-sm text-ink/60 hover:text-ink transition">
+          <ArrowLeft className="w-4 h-4" />
+          Back to doctors
+        </Link>
+      </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-10 grid lg:grid-cols-[1fr_360px] gap-10">
+      <div className="max-w-5xl mx-auto px-6 py-8 grid lg:grid-cols-[1fr_360px] gap-10">
         <div>
           <div className="flex items-start gap-4 mb-8">
             <div className="w-16 h-16 rounded-full bg-teal-light text-teal-dark font-display text-xl flex items-center justify-center shrink-0">
@@ -250,25 +254,12 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function PageState({ message, isError }: { message: string; isError?: boolean }) {
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center">
+    <div className="flex items-center justify-center py-32">
       <p className={`text-sm ${isError ? "text-rust" : "text-ink/40"}`}>{message}</p>
     </div>
   );
 }
 
-function dateKey(iso: string): string {
-  return iso.split("T")[0];
-}
-
 function hour(iso: string): number {
   return new Date(iso).getHours();
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
-function formatDayLabel(dateKeyStr: string): string {
-  const date = new Date(`${dateKeyStr}T00:00:00`);
-  return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }

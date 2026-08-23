@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -24,7 +25,7 @@ export function useDoctorAppointments(doctorId: number | null) {
           { signal }
         );
         if (!signal?.aborted) setAppointments(data);
-      } catch (err: any) {
+      } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         if (!signal?.aborted) {
           setError(err instanceof ApiError ? err.message : "Couldn't load appointments.");

@@ -11,7 +11,7 @@ function decodeToken(token: string): DecodedToken | null {
   try {
     const payload = token.split(".")[1];
     if (!payload) return null;
-    
+
     // Replace URL-safe base64 characters for standard atob() compatibility
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
     const json = atob(base64);
@@ -37,8 +37,14 @@ function matchesRoute(pathname: string, routes: string[]): boolean {
   return routes.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Never intercept API calls being rewritten to the backend.
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("token")?.value;
   const decoded = isValid(token);
 
