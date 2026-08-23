@@ -225,6 +225,7 @@ export default function DoctorProfilePage() {
                 className="rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 text-white text-sm font-medium px-6 py-2.5 transition"
               >
                 {saving ? "Saving…" : "Save changes"}
+                {saving ? "Saving…" : "Save changes"}
               </button>
             </div>
           </form>

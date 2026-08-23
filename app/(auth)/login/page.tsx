@@ -92,11 +92,21 @@ export default function LoginPage() {
               />
             </div>
 
+            {error && (
+              <p
+                role="alert"
+                className="text-sm text-rust bg-rust/5 border border-rust/20 rounded-lg px-3.5 py-2.5"
+              >
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="w-full rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-medium py-2.5 transition"
+              disabled={submitting}
+              className="w-full rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 transition"
             >
-              Sign in
+              {submitting ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
