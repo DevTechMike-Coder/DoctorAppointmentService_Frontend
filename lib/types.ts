@@ -30,8 +30,9 @@ export interface DoctorDto {
 }
 
 export interface AvailabilityDto {
-  slotId: number;
+  id: number;
   doctorId: number;
+  doctorName: string;
   startTime: string; // ISO
   endTime: string;
   isBooked: boolean;
