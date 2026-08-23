@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Camera, Stethoscope } from "lucide-react";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { DoctorDto } from "@/lib/types";
+import { useDoctorProfile } from "@/hooks/useDoctorProfile";
+import { ApiError } from "@/lib/api";
 
 const SPECIALTIES = [
   "Cardiology",
@@ -17,60 +17,60 @@ const SPECIALTIES = [
 ];
 
 export default function DoctorProfilePage() {
-  const [fullName, setFullName] = useState("Dr. Amara Chen");
-  const [specialization, setSpecialization] = useState("Cardiology");
-  const [qualifications, setQualifications] = useState("MD, FACC");
-  const [bio, setBio] = useState(
-    "15 years treating complex cardiac conditions with a focus on preventive care."
-  );
-  const [consultationFee, setConsultationFee] = useState("120");
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { profile, loading, error, saveProfile } = useDoctorProfile();
 
+  const [fullName, setFullName] = useState("");
+  const [specialization, setSpecialization] = useState(SPECIALTIES[0]);
+  const [qualifications, setQualifications] = useState("");
+  const [bio, setBio] = useState("");
+  const [consultationFee, setConsultationFee] = useState("");
+
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // Hydrate form once the real profile loads
   useEffect(() => {
-    async function load() {
-      try {
-        const doctorData = await apiFetch<DoctorDto>("/doctors/me");
-        if (doctorData) {
-          setFullName(doctorData.fullName);
-          setSpecialization(doctorData.specialization);
-          setQualifications(doctorData.qualifications || "");
-          setBio(doctorData.bio || "");
-          setConsultationFee(String(doctorData.consultationFee));
-        }
-      } catch {
-        // Fallback to initial values
-      }
+    if (profile) {
+      setFullName(profile.fullName ?? "");
+      setSpecialization(profile.specialization ?? SPECIALTIES[0]);
+      setQualifications(profile.qualifications ?? "");
+      setBio(profile.bio ?? "");
+      setConsultationFee(profile.consultationFee?.toString() ?? "");
     }
-    load();
-  }, []);
+  }, [profile]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setSaveSuccess(false);
-    setError(null);
+    setSaveError(null);
+    setSaved(false);
     try {
-      await apiFetch("/doctors/profile", {
-        method: "PUT",
-        body: JSON.stringify({
-          fullName,
-          specialization,
-          qualifications,
-          bio,
-          consultationFee: Number(consultationFee),
-        }),
+      await saveProfile({
+        fullName,
+        specialization,
+        qualifications,
+        bio,
+        consultationFee: Number(consultationFee),
       });
-      setSaveSuccess(true);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't save changes.");
+      setSaveError(err instanceof ApiError ? err.message : "Couldn't save your profile.");
     } finally {
       setSaving(false);
     }
   }
 
-  const initials = fullName.replace("Dr. ", "").split(" ").map((n) => n[0]).join("");
+  const initials = fullName.replace("Dr. ", "").split(" ").map((n) => n[0]).join("") || "DR";
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <p className="text-sm text-ink/40">Loading…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -87,12 +87,19 @@ export default function DoctorProfilePage() {
         <div className="mb-8">
           <h1 className="font-display text-3xl text-ink mb-1.5">Your profile</h1>
           <p className="text-ink/60 text-sm">
-            This is what patients see when they&apos;re deciding to book with you.
+            {profile
+              ? "This is what patients see when they're deciding to book with you."
+              : "Set up your profile so patients can find and book with you."}
           </p>
         </div>
 
+        {error && (
+          <div className="bg-white rounded-xl border border-rust/20 p-5 mb-6">
+            <p className="text-sm text-rust">{error}</p>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-[220px_1fr] gap-8">
-          {/* Avatar + preview card */}
           <div>
             <div className="bg-white rounded-xl border border-ink/10 p-5 text-center">
               <div className="relative w-20 h-20 mx-auto mb-4">
@@ -118,7 +125,6 @@ export default function DoctorProfilePage() {
             </div>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-ink mb-1.5">
@@ -127,6 +133,7 @@ export default function DoctorProfilePage() {
               <input
                 id="fullName"
                 type="text"
+                required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full rounded-lg border border-ink/15 bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-teal focus:border-teal transition"
@@ -186,14 +193,13 @@ export default function DoctorProfilePage() {
                 Consultation fee
               </label>
               <div className="relative max-w-[160px]">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink/40">
-                  $
-                </span>
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink/40">$</span>
                 <input
                   id="fee"
                   type="number"
                   min="0"
                   step="1"
+                  required
                   value={consultationFee}
                   onChange={(e) => setConsultationFee(e.target.value)}
                   className="w-full rounded-lg border border-ink/15 bg-white pl-7 pr-3.5 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-teal focus:border-teal transition"
@@ -201,14 +207,14 @@ export default function DoctorProfilePage() {
               </div>
             </div>
 
-            {error && (
+            {saveError && (
               <p role="alert" className="text-sm text-rust bg-rust/5 border border-rust/20 rounded-lg px-3.5 py-2.5">
-                {error}
+                {saveError}
               </p>
             )}
-            {saveSuccess && (
+            {saved && (
               <p className="text-sm text-teal-dark bg-teal-light border border-teal/20 rounded-lg px-3.5 py-2.5">
-                Changes saved successfully!
+                Saved.
               </p>
             )}
 
@@ -216,8 +222,9 @@ export default function DoctorProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-6 py-2.5 transition"
+                className="rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 text-white text-sm font-medium px-6 py-2.5 transition"
               >
+                {saving ? "Saving…" : "Save changes"}
                 {saving ? "Saving…" : "Save changes"}
               </button>
             </div>
