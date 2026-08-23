@@ -77,7 +77,7 @@ export default function DoctorProfilePage() {
   const daySlots = slots.filter((s) => dateKey(s.startTime) === activeDay);
   const morning = daySlots.filter((s) => hour(s.startTime) < 12);
   const afternoon = daySlots.filter((s) => hour(s.startTime) >= 12);
-  const selectedSlot = slots.find((s) => s.slotId === selectedSlotId);
+  const selectedSlot = slots.find((s) => s.id === selectedSlotId);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -223,10 +223,10 @@ function SlotGroup({
       <div className="flex flex-wrap gap-2">
         {slots.map((s) => (
           <button
-            key={s.slotId}
-            onClick={() => onSelect(s.slotId)}
+            key={s.id}
+            onClick={() => onSelect(s.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
-              selectedSlotId === s.slotId
+              selectedSlotId === s.id
                 ? "bg-teal text-white border-teal"
                 : "bg-white text-ink border-ink/10 hover:border-teal/40"
             }`}

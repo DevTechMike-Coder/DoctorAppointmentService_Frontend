@@ -73,11 +73,11 @@ export function useAvailability(doctorId: number | null) {
     return created;
   };
 
-  const deleteSlot = async (slotId: number): Promise<void> => {
+  const deleteSlot = async (id: number): Promise<void> => {
     if (!doctorId) throw new Error("Doctor ID is missing");
 
-    await apiFetch(`/doctors/${doctorId}/slots/${slotId}`, { method: "DELETE" });
-    setSlots((prev) => prev.filter((s) => s.slotId !== slotId));
+    await apiFetch(`/doctors/${doctorId}/slots/${id}`, { method: "DELETE" });
+    setSlots((prev) => prev.filter((s) => s.id !== id));
   };
 
   return { 

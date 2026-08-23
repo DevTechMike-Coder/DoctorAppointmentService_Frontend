@@ -1,136 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Calendar, Clock, Stethoscope, X } from "lucide-react";
-<<<<<<< HEAD
+import { useState } from "react";
+import { Calendar, Clock, X } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import type { AppointmentDto, AppointmentStatus } from "@/lib/types";
-=======
-import { apiFetch } from "@/lib/api";
-import type { AppointmentDto } from "@/lib/types";
-
-type Status = "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
-
-const PLACEHOLDER_APPOINTMENTS: {
-  id: number;
-  doctorName: string;
-  specialization: string;
-  date: string;
-  time: string;
-  status: Status;
-  reason: string;
-}[] = [
-  {
-    id: 1,
-    doctorName: "Dr. Amara Chen",
-    specialization: "Cardiology",
-    date: "Mon, Aug 24",
-    time: "9:00 AM",
-    status: "CONFIRMED",
-    reason: "Follow-up on blood pressure medication",
-  },
-  {
-    id: 2,
-    doctorName: "Dr. Lena Kovacs",
-    specialization: "General Practice",
-    date: "Wed, Aug 26",
-    time: "11:00 AM",
-    status: "PENDING",
-    reason: "Annual check-up",
-  },
-  {
-    id: 3,
-    doctorName: "Dr. Femi Okonkwo",
-    specialization: "Dermatology",
-    date: "Aug 12",
-    time: "2:00 PM",
-    status: "COMPLETED",
-    reason: "Skin rash evaluation",
-  },
-  {
-    id: 4,
-    doctorName: "Dr. Tunde Bakare",
-    specialization: "Psychiatry",
-    date: "Aug 5",
-    time: "3:30 PM",
-    status: "CANCELLED",
-    reason: "Initial consultation",
-  },
-];
->>>>>>> 7749d42da46f199a4a07f522573008dde2a1b179
 
 const TABS = ["Upcoming", "Past", "Cancelled"] as const;
-
-interface UnifiedAppointment {
-  id: number;
-  doctorName: string;
-  specialization: string;
-  date: string;
-  time: string;
-  status: Status;
-  reason: string;
-}
 
 export default function AppointmentsPage() {
   const { appointments, loading, error, cancelAppointment } = useAppointments();
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("Upcoming");
-<<<<<<< HEAD
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-=======
-  const [appointments, setAppointments] = useState<UnifiedAppointment[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await apiFetch<AppointmentDto[]>("/appointments");
-        const mapped = data.map((a) => {
-          const dateStr = a.startTime.split("T")[0];
-          const formattedDate = new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-          });
-          const formattedTime = new Date(a.startTime).toLocaleTimeString(undefined, {
-            hour: "numeric",
-            minute: "2-digit",
-          });
-          return {
-            id: a.id,
-            doctorName: a.doctorName,
-            specialization: "General Practice",
-            date: formattedDate,
-            time: formattedTime,
-            status: a.status as Status,
-            reason: a.reason || "Appointment visit",
-          };
-        });
-        setAppointments(mapped);
-      } catch {
-        // Fallback to placeholders on any failure
-        setAppointments(PLACEHOLDER_APPOINTMENTS);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  async function handleCancel(id: number) {
-    try {
-      await apiFetch(`/appointments/${id}/cancel`, {
-        method: "POST",
-      });
-    } catch {
-      // Allow local status update for mock fallback compatibility
-    }
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: "CANCELLED" } : a))
-    );
-  }
-
->>>>>>> 7749d42da46f199a4a07f522573008dde2a1b179
   const filtered = appointments.filter((a) => {
     if (activeTab === "Upcoming") return a.status === "PENDING" || a.status === "CONFIRMED";
     if (activeTab === "Past") return a.status === "COMPLETED";
@@ -142,7 +23,7 @@ export default function AppointmentsPage() {
     try {
       await cancelAppointment(id);
     } catch {
-      // swallow — appointment stays in list, user can retry
+      // stays in list, user can retry
     } finally {
       setCancellingId(null);
     }
@@ -181,7 +62,6 @@ export default function AppointmentsPage() {
           ))}
         </div>
 
-<<<<<<< HEAD
         {loading && (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -197,22 +77,6 @@ export default function AppointmentsPage() {
         )}
 
         {!loading && !error && filtered.length === 0 && (
-=======
-        {/* List */}
-        {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-ink/10 p-5 animate-pulse flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-ink/5 shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-ink/5 rounded w-1/3" />
-                  <div className="h-3 bg-ink/5 rounded w-1/4" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
->>>>>>> 7749d42da46f199a4a07f522573008dde2a1b179
           <div className="bg-white rounded-xl border border-ink/10 py-16 text-center">
             <Calendar className="w-8 h-8 text-ink/15 mx-auto mb-3" />
             <p className="text-sm text-ink/40">Nothing here yet.</p>
@@ -222,16 +86,12 @@ export default function AppointmentsPage() {
         {!loading && !error && filtered.length > 0 && (
           <div className="space-y-3">
             {filtered.map((appt) => (
-<<<<<<< HEAD
               <AppointmentRow
                 key={appt.id}
                 appt={appt}
                 cancelling={cancellingId === appt.id}
                 onCancel={() => handleCancel(appt.id)}
               />
-=======
-              <AppointmentRow key={appt.id} appt={appt} onCancel={handleCancel} />
->>>>>>> 7749d42da46f199a4a07f522573008dde2a1b179
             ))}
           </div>
         )}
@@ -242,19 +102,12 @@ export default function AppointmentsPage() {
 
 function AppointmentRow({
   appt,
-<<<<<<< HEAD
   cancelling,
   onCancel,
 }: {
   appt: AppointmentDto;
   cancelling: boolean;
   onCancel: () => void;
-=======
-  onCancel,
-}: {
-  appt: UnifiedAppointment;
-  onCancel: (id: number) => void;
->>>>>>> 7749d42da46f199a4a07f522573008dde2a1b179
 }) {
   const initials = appt.doctorName.replace("Dr. ", "").split(" ").map((n) => n[0]).join("");
   const canCancel = appt.status === "PENDING" || appt.status === "CONFIRMED";
@@ -286,14 +139,9 @@ function AppointmentRow({
 
       {canCancel && (
         <button
-<<<<<<< HEAD
           onClick={onCancel}
           disabled={cancelling}
           className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-ink/30 hover:text-rust hover:bg-rust/5 transition disabled:opacity-40"
-=======
-          onClick={() => onCancel(appt.id)}
-          className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-ink/30 hover:text-rust hover:bg-rust/5 transition"
->>>>>>> 7749d42da46f199a4a07f522573008dde2a1b179
           title="Cancel appointment"
         >
           <X className="w-4 h-4" />

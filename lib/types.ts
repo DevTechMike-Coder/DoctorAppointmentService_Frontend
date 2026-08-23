@@ -39,7 +39,7 @@ export interface AvailabilityDto {
 }
 
 export interface BookAppointmentRequest {
-  slotId: number;
+  id: number;
   reason?: string;
 }
 
