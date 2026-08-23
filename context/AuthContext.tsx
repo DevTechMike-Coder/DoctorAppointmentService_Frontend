@@ -4,7 +4,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { setToken, getToken, clearToken, decodeToken, isTokenValid } from "@/lib/auth";
+import {
+  setToken,
+  getToken,
+  clearToken,
+  decodeToken,
+  isTokenValid,
+  setStoredUserName,
+  getStoredUserName,
+} from "@/lib/auth";
 import type { AuthResponse, LoginRequest, RegisterRequest, Role } from "@/lib/types";
 
 interface AuthUser {
@@ -23,6 +31,14 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Only allow same-site relative redirect targets. */
+function safeRedirectTarget(): string | null {
+  if (typeof window === "undefined") return null;
+  const target = new URLSearchParams(window.location.search).get("redirectTo");
+  if (target && target.startsWith("/") && !target.startsWith("//")) return target;
+  return null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (token && isTokenValid(token)) {
       const decoded = decodeToken(token);
       if (decoded) {
-        setUser({ userId: decoded.userId, fullName: "", role: decoded.role });
+        setUser({
+          userId: decoded.userId,
+          fullName: getStoredUserName(),
+          role: decoded.role,
+        });
       }
     } else if (token) {
       clearToken();
@@ -43,8 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function applyAuthResponse(res: AuthResponse) {
     setToken(res.token);
+    setStoredUserName(res.fullName);
     setUser({ userId: res.userId, fullName: res.fullName, role: res.role });
-    router.push(res.role === "DOCTOR" ? "/doctor/appointments" : "/doctors");
+
+    const fallback = res.role === "DOCTOR" ? "/doctor/appointments" : "/doctors";
+    router.push(safeRedirectTarget() ?? fallback);
   }
 
   async function login(credentials: LoginRequest) {

@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<!-- BEGIN:nextjs-agent-rules -->
 
-## Getting Started
+# This is NOT the Next.js you know
 
-First, run the development server:
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+<!-- END:nextjs-agent-rules -->
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# MedBook — Doctor Appointment Frontend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js frontend for the [DoctorAppointmentService_Backend](https://github.com/DevTechMike-Coder/DoctorAppointmentService_Backend) Spring Boot API.
 
-## Learn More
+## Getting started
 
-To learn more about Next.js, take a look at the following resources:
+1. Start the backend (Spring Boot, default port `8080`).
+2. Copy the env file and adjust if needed:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   cp .env.example .env.local
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Install and run:
 
-## Deploy on Vercel
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000](http://localhost:3000).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## How the API is reached
+
+The browser calls same-origin `/api/v1/*`; `next.config.ts` rewrites those
+requests server-side to `BACKEND_URL` (default `http://localhost:8080`).
+This avoids CORS entirely. To call the backend directly from the browser
+instead, set `NEXT_PUBLIC_API_BASE_URL` (the backend must then allow your
+origin in its CORS config).
+
+## Structure
+
+- `app/(auth)` — login and registration
+- `app/(patient)` — doctor browsing, booking, patient appointments
+- `app/(doctor)` — doctor appointments, availability slots, profile
+- `hooks/` — data-fetching hooks per resource
+- `lib/` — API client, auth/token helpers, shared types, date helpers
+- `components/` — shared UI (header/nav, toasts)
+- `proxy.ts` — route protection + role-based redirects (Next.js proxy convention)

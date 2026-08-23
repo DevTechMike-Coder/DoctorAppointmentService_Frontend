@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { Calendar, Clock, X } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useToast } from "@/components/Toast";
+import { ApiError } from "@/lib/api";
 import type { AppointmentDto, AppointmentStatus } from "@/lib/types";
 
 const TABS = ["Upcoming", "Past", "Cancelled"] as const;
 
 export default function AppointmentsPage() {
   const { appointments, loading, error, cancelAppointment } = useAppointments();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("Upcoming");
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
@@ -22,24 +25,16 @@ export default function AppointmentsPage() {
     setCancellingId(id);
     try {
       await cancelAppointment(id);
-    } catch {
-      // stays in list, user can retry
+      toast.success("Appointment cancelled.");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't cancel. Try again.");
     } finally {
       setCancellingId(null);
     }
   }
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-ink/10 bg-white">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="font-display text-xl text-ink">MedBook</span>
-          <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-dark text-xs font-medium">
-            JD
-          </div>
-        </div>
-      </header>
-
+    <div>
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
           <h1 className="font-display text-3xl text-ink mb-1.5">Your appointments</h1>

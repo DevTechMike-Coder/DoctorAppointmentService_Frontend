@@ -24,16 +24,7 @@ export default function DoctorsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-ink/10 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="font-display text-xl text-ink">MedBook</span>
-          <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-dark text-xs font-medium">
-            JD
-          </div>
-        </div>
-      </header>
-
+    <div>
       <div className="max-w-6xl mx-auto px-6 py-10">
         <div className="mb-8">
           <h1 className="font-display text-3xl text-ink mb-1.5">Find a doctor</h1>

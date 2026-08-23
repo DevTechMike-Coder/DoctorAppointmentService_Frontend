@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { apiFetch, ApiError } from "@/lib/api";
+import { toLocalDateTime } from "@/lib/datetime";
 import type { DoctorDto, AvailabilityDto } from "@/lib/types";
 
 export function useDoctors() {
@@ -14,13 +15,12 @@ export function useDoctors() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<DoctorDto[]>("/doctors");
+      const data = await apiFetch<DoctorDto[]>("/doctors", { signal });
       if (!signal?.aborted) setDoctors(data);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       if (!signal?.aborted) {
-        setError(
-          err instanceof ApiError ? err.message : "Couldn't load doctors.",
-        );
+        setError(err instanceof ApiError ? err.message : "Couldn't load doctors.");
       }
     } finally {
       if (!signal?.aborted) setLoading(false);
@@ -33,20 +33,14 @@ export function useDoctors() {
     return () => controller.abort();
   }, [fetchDoctors]);
 
-  function toLocalDateTimeParam(date: Date): string {
-    return date.toISOString().slice(0, 19); // "2026-08-22T22:52:00"
-  }
-
-  const fetchDoctorSlots = async (
-    doctorId: number,
-  ): Promise<AvailabilityDto[]> => {
+  const fetchDoctorSlots = async (doctorId: number): Promise<AvailabilityDto[]> => {
     const from = new Date();
     const to = new Date();
     to.setDate(to.getDate() + 30);
 
     const params = new URLSearchParams({
-      from: toLocalDateTimeParam(from),
-      to: toLocalDateTimeParam(to),
+      from: toLocalDateTime(from),
+      to: toLocalDateTime(to),
     });
 
     return apiFetch<AvailabilityDto[]>(`/doctors/${doctorId}/slots?${params}`);
