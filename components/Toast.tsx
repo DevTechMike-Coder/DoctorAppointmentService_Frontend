@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { CheckCircle2, AlertCircle, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 
 type ToastKind = "success" | "error";
 
@@ -46,31 +47,40 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         aria-live="polite"
         className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-sm px-4 pointer-events-none"
       >
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            role="status"
-            className={`pointer-events-auto flex items-center gap-2.5 rounded-lg border px-4 py-3 text-sm shadow-lg bg-white ${
-              t.kind === "success"
-                ? "border-teal/25 text-teal-dark"
-                : "border-rust/25 text-rust"
-            }`}
-          >
-            {t.kind === "success" ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 shrink-0" />
-            )}
-            <span className="flex-1">{t.message}</span>
-            <button
-              onClick={() => dismiss(t.id)}
-              className="shrink-0 text-ink/30 hover:text-ink/60 transition"
-              aria-label="Dismiss"
+        <AnimatePresence mode="popLayout">
+          {toasts.map((t) => (
+            <motion.div
+              key={t.id}
+              layout
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10, transition: { duration: 0.2 } }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              role="status"
+              className={`pointer-events-auto flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm shadow-xl backdrop-blur-md bg-white/95 ${
+                t.kind === "success"
+                  ? "border-teal/25 text-teal-dark shadow-teal/5"
+                  : "border-rust/25 text-rust shadow-rust/5"
+              }`}
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
+              {t.kind === "success" ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span className="flex-1 font-medium">{t.message}</span>
+              <motion.button
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => dismiss(t.id)}
+                className="shrink-0 text-ink/40 hover:text-ink transition p-1 rounded-md"
+                aria-label="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </motion.button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );
@@ -81,3 +91,4 @@ export function useToast() {
   if (!ctx) throw new Error("useToast must be used within ToastProvider");
   return ctx;
 }
+
