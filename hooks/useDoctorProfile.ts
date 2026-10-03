@@ -63,11 +63,31 @@ export function useDoctorProfile() {
     return updated;
   };
 
+  /** Uploads an already-resized image. Requires a saved profile (the backend returns 409 otherwise). */
+  const uploadPhoto = async (image: Blob): Promise<DoctorDto> => {
+    const form = new FormData();
+    form.append("file", image, "avatar.jpg");
+    const updated = await apiFetch<DoctorDto>("/doctors/profile/photo", {
+      method: "POST",
+      body: form,
+    });
+    setProfile(updated);
+    return updated;
+  };
+
+  const removePhoto = async (): Promise<DoctorDto> => {
+    const updated = await apiFetch<DoctorDto>("/doctors/profile/photo", { method: "DELETE" });
+    setProfile(updated);
+    return updated;
+  };
+
   return {
     profile,
     loading: loading || authLoading,
     error,
     refetch: fetchProfile,
     saveProfile,
+    uploadPhoto,
+    removePhoto,
   };
 }

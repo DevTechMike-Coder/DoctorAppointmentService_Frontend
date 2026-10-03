@@ -13,7 +13,13 @@ import {
   setStoredUserName,
   getStoredUserName,
 } from "@/lib/auth";
-import type { AuthResponse, LoginRequest, RegisterRequest, Role } from "@/lib/types";
+import type {
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+  Role,
+} from "@/lib/types";
 
 interface AuthUser {
   userId: number;
@@ -25,7 +31,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  /** Resolves `{ verificationRequired: true }` when the user must confirm their email before signing in. */
+  register: (data: RegisterRequest) => Promise<{ verificationRequired: boolean }>;
   logout: () => void;
 }
 
@@ -79,11 +86,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function register(data: RegisterRequest) {
-    const res = await apiFetch<AuthResponse>("/auth/register", {
+    const res = await apiFetch<RegisterResponse>("/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    applyAuthResponse(res);
+    if (res.verificationRequired || !res.auth) {
+      return { verificationRequired: true };
+    }
+    applyAuthResponse(res.auth);
+    return { verificationRequired: false };
   }
 
   function logout() {

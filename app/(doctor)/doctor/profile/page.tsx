@@ -1,12 +1,14 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, Stethoscope, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useDoctorProfile } from "@/hooks/useDoctorProfile";
 import { useToast } from "@/components/Toast";
+import { Avatar } from "@/components/Avatar";
 import { ApiError } from "@/lib/api";
+import { resizeToAvatar } from "@/lib/image";
 
 const SPECIALTIES = [
   "Cardiology",
@@ -20,7 +22,7 @@ const SPECIALTIES = [
 ];
 
 export default function DoctorProfilePage() {
-  const { profile, loading, error, saveProfile } = useDoctorProfile();
+  const { profile, loading, error, saveProfile, uploadPhoto, removePhoto } = useDoctorProfile();
   const toast = useToast();
 
   const [fullName, setFullName] = useState("");
@@ -32,6 +34,17 @@ export default function DoctorProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  // Chosen before the profile exists: kept locally and uploaded right after the first save.
+  const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; previewUrl: string } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingPhoto) URL.revokeObjectURL(pendingPhoto.previewUrl);
+    };
+  }, [pendingPhoto]);
 
   // Hydrate form once the real profile loads
   useEffect(() => {
@@ -57,6 +70,14 @@ export default function DoctorProfilePage() {
         bio,
         consultationFee: Number(consultationFee),
       });
+      if (pendingPhoto) {
+        try {
+          await uploadPhoto(pendingPhoto.blob);
+          setPendingPhoto(null);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Profile saved, but the photo upload failed.");
+        }
+      }
       setSaved(true);
       toast.success("Profile saved.");
       setTimeout(() => setSaved(false), 2500);
@@ -66,6 +87,41 @@ export default function DoctorProfilePage() {
       toast.error(message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+
+    setPhotoBusy(true);
+    try {
+      const blob = await resizeToAvatar(file);
+      if (profile) {
+        await uploadPhoto(blob);
+        setPendingPhoto(null);
+        toast.success("Photo updated.");
+      } else {
+        setPendingPhoto({ blob, previewUrl: URL.createObjectURL(blob) });
+        toast.success("Photo ready. It uploads when you save your profile.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't upload your photo.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function handleRemovePhoto() {
+    setPhotoBusy(true);
+    try {
+      await removePhoto();
+      toast.success("Photo removed.");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't remove your photo.");
+    } finally {
+      setPhotoBusy(false);
     }
   }
 
@@ -117,17 +173,40 @@ export default function DoctorProfilePage() {
               className="bg-white rounded-2xl border border-ink/10 p-6 text-center shadow-xs lg:sticky lg:top-24"
             >
               <div className="relative w-20 h-20 mx-auto mb-4">
-                <div className="w-20 h-20 rounded-2xl bg-teal-light text-teal-dark font-display font-bold text-2xl flex items-center justify-center shadow-xs">
-                  {initials}
-                </div>
+                <Avatar
+                  initials={initials}
+                  photoUrl={pendingPhoto?.previewUrl ?? profile?.photoUrl}
+                  alt={fullName || "Profile photo"}
+                  className={`w-20 h-20 rounded-2xl bg-teal-light text-teal-dark font-display font-bold text-2xl flex items-center justify-center shadow-xs transition-opacity ${photoBusy ? "opacity-50" : ""}`}
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handlePhotoSelected}
+                />
                 <button
                   type="button"
-                  className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-ink/10 flex items-center justify-center text-ink/50 hover:text-teal hover:shadow-xs transition"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={photoBusy}
+                  className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-ink/10 flex items-center justify-center text-ink/50 hover:text-teal hover:shadow-xs disabled:opacity-50 transition"
                   title="Change photo"
+                  aria-label="Change photo"
                 >
                   <Camera className="w-4 h-4" />
                 </button>
               </div>
+              {profile?.photoUrl && !pendingPhoto && (
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  disabled={photoBusy}
+                  className="text-xs text-ink/45 hover:text-rust disabled:opacity-50 transition mb-3"
+                >
+                  Remove photo
+                </button>
+              )}
               <h3 className="font-display text-lg font-bold text-ink mb-1 truncate">
                 {fullName || "Your name"}
               </h3>

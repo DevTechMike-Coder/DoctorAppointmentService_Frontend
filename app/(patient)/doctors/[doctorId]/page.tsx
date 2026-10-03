@@ -7,6 +7,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useDoctors } from "@/hooks/useDoctors";
 import { useToast } from "@/components/Toast";
+import { Avatar } from "@/components/Avatar";
 import { apiFetch, ApiError } from "@/lib/api";
 import { dateKey, formatTime, formatDayLabel } from "@/lib/datetime";
 import type { DoctorDto, AvailabilityDto } from "@/lib/types";
@@ -110,9 +111,12 @@ export default function DoctorProfilePage() {
             transition={{ duration: 0.4 }}
             className="flex items-start gap-5 mb-8 p-6 bg-white rounded-2xl border border-ink/10 shadow-xs"
           >
-            <div className="w-18 h-18 rounded-2xl bg-teal-light text-teal-dark font-display text-2xl font-bold flex items-center justify-center shrink-0">
-              {initials}
-            </div>
+            <Avatar
+              initials={initials}
+              photoUrl={doctor.photoUrl}
+              alt={doctor.fullName}
+              className="w-18 h-18 rounded-2xl bg-teal-light text-teal-dark font-display text-2xl font-bold flex items-center justify-center shrink-0"
+            />
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink mb-1">
                 {doctor.fullName}

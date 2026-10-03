@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { AlertCircle, ArrowRight, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowRight, Mail, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
+import { ResendVerification } from "@/components/ResendVerification";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -16,6 +17,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<"PATIENT" | "DOCTOR">("PATIENT");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [verifySentTo, setVerifySentTo] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +30,10 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      await register({ fullName, email, password, role });
+      const result = await register({ fullName, email, password, role });
+      if (result.verificationRequired) {
+        setVerifySentTo(email);
+      }
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -95,6 +100,10 @@ export default function RegisterPage() {
             </Link>
           </div>
 
+          {verifySentTo ? (
+            <CheckInbox email={verifySentTo} />
+          ) : (
+          <>
           <h2 className="font-display text-3xl text-ink mb-2">
             Create your account
           </h2>
@@ -263,8 +272,34 @@ export default function RegisterPage() {
               Sign in
             </Link>
           </p>
+          </>
+          )}
         </motion.div>
       </div>
+    </div>
+  );
+}
+
+function CheckInbox({ email }: { email: string }) {
+  return (
+    <div className="text-center">
+      <div className="w-12 h-12 rounded-2xl bg-teal-light text-teal-dark flex items-center justify-center mx-auto mb-5">
+        <Mail className="w-6 h-6" />
+      </div>
+      <h2 className="font-display text-3xl text-ink mb-2">Check your inbox</h2>
+      <p className="text-ink/60 text-sm mb-6 leading-relaxed">
+        We sent a verification link to <span className="font-medium text-ink">{email}</span>.
+        Open it to activate your account, then sign in.
+      </p>
+      <div className="mb-6 flex justify-center">
+        <ResendVerification email={email} />
+      </div>
+      <Link
+        href="/login"
+        className="text-sm text-teal font-medium hover:text-teal-dark underline-offset-4 hover:underline"
+      >
+        Back to sign in
+      </Link>
     </div>
   );
 }

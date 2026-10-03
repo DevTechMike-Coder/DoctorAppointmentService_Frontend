@@ -20,6 +20,13 @@ export interface AuthResponse {
   role: Role;
 }
 
+/** Registration result: either a session, or a prompt to verify the email first. */
+export interface RegisterResponse {
+  verificationRequired: boolean;
+  message: string;
+  auth: AuthResponse | null;
+}
+
 export interface DoctorDto {
   id: number;
   userId: number;
@@ -28,6 +35,8 @@ export interface DoctorDto {
   qualifications: string;
   bio: string;
   consultationFee: number;
+  /** API-relative path (resolve with apiUrl); null when the doctor has no photo. */
+  photoUrl: string | null;
 }
 
 /** Payload for PUT /doctors/profile — backend accepts a DoctorDto-shaped body. */

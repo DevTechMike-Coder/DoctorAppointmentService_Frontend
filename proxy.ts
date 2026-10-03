@@ -32,6 +32,7 @@ function isValid(token: string | undefined): DecodedToken | null {
 const PATIENT_ROUTES = ["/doctors", "/appointments"];
 const DOCTOR_ROUTES = ["/doctor"];
 const AUTH_ROUTES = ["/login", "/register"];
+const PUBLIC_ROUTES = ["/verify-email"];
 
 function matchesRoute(pathname: string, routes: string[]): boolean {
   return routes.some((r) => pathname === r || pathname.startsWith(`${r}/`));
@@ -55,7 +56,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(destination, request.url));
   }
 
-  if (pathname === "/" || isAuthRoute) {
+  if (pathname === "/" || isAuthRoute || matchesRoute(pathname, PUBLIC_ROUTES)) {
     return NextResponse.next();
   }
 

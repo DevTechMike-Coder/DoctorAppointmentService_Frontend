@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, Stethoscope, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useDoctors } from "@/hooks/useDoctors";
+import { Avatar } from "@/components/Avatar";
 import type { DoctorDto } from "@/lib/types";
 
 export default function DoctorsPage() {
@@ -171,9 +172,12 @@ function DoctorCard({
       >
         <div>
           <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-teal-light text-teal-dark font-display font-semibold text-base flex items-center justify-center group-hover:scale-105 transition duration-200">
-              {initials}
-            </div>
+            <Avatar
+              initials={initials}
+              photoUrl={doctor.photoUrl}
+              alt={doctor.fullName}
+              className="w-12 h-12 rounded-2xl bg-teal-light text-teal-dark font-display font-semibold text-base flex items-center justify-center group-hover:scale-105 transition duration-200"
+            />
             <span className="text-xs font-semibold text-ink/60 bg-ink/5 px-2.5 py-1 rounded-full">
               ${doctor.consultationFee}
             </span>

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { AlertCircle, ArrowRight, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
+import { ResendVerification } from "@/components/ResendVerification";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -26,10 +28,13 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNeedsVerification(false);
     setSubmitting(true);
     try {
       await login({ email, password });
     } catch (err) {
+      // 403 from /auth/login only ever means "correct password, email not verified yet".
+      setNeedsVerification(err instanceof ApiError && err.status === 403);
       setError(err instanceof ApiError ? err.message : "Couldn't sign in. Try again.");
     } finally {
       setSubmitting(false);
@@ -156,6 +161,8 @@ export default function LoginPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {needsVerification && <ResendVerification email={email} />}
 
             <motion.button
               whileHover={{ scale: 1.01 }}

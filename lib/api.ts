@@ -34,13 +34,22 @@ function handleUnauthorized() {
   }
 }
 
+/** Resolves an API-relative path (e.g. a doctor's `photoUrl`) to a URL the browser can load. */
+export function apiUrl(path: string): string {
+  if (/^(https?:|blob:|data:)/.test(path)) return path;
+  return `${API_BASE}${path}`;
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
+
+  // For FormData the browser must set Content-Type itself (it adds the multipart boundary).
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
