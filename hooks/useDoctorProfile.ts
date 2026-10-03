@@ -13,7 +13,7 @@ import type { DoctorDto, UpdateDoctorProfileRequest } from "@/lib/types";
  * profile on first save (onboarding) and updates it afterwards.
  */
 export function useDoctorProfile() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateFullName } = useAuth();
   const [profile, setProfile] = useState<DoctorDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +60,7 @@ export function useDoctorProfile() {
       body: JSON.stringify(payload),
     });
     setProfile(updated);
+    updateFullName(updated.fullName);
     return updated;
   };
 

@@ -34,6 +34,8 @@ interface AuthContextValue {
   /** Resolves `{ verificationRequired: true }` when the user must confirm their email before signing in. */
   register: (data: RegisterRequest) => Promise<{ verificationRequired: boolean }>;
   logout: () => void;
+  /** Updates the displayed name (header, storage) after a profile rename. */
+  updateFullName: (fullName: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -97,6 +99,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { verificationRequired: false };
   }
 
+  function updateFullName(fullName: string) {
+    setStoredUserName(fullName);
+    setUser((prev) => (prev ? { ...prev, fullName } : prev));
+  }
+
   function logout() {
     clearToken();
     setUser(null);
@@ -104,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateFullName }}>
       {children}
     </AuthContext.Provider>
   );
