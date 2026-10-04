@@ -37,6 +37,9 @@ export interface DoctorDto {
   consultationFee: number;
   /** API-relative path (resolve with apiUrl); null when the doctor has no photo. */
   photoUrl: string | null;
+  /** City / ISO country of the doctor's primary workplace; null when they haven't added one. */
+  primaryCity: string | null;
+  primaryCountry: string | null;
 }
 
 /** Payload for PUT /doctors/profile — backend accepts a DoctorDto-shaped body. */

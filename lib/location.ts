@@ -32,6 +32,11 @@ export function getCountryOptions(): { code: string; name: string }[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** "Lagos, Nigeria" — compact line for doctor cards; empty string when there is no city. */
+export function formatCityLine(city: string | null, country: string | null): string {
+  return [city, country ? countryName(country) : null].filter(Boolean).join(", ");
+}
+
 /** "12 Marina Rd, Suite 4, Lagos, Lagos 100001, Nigeria" */
 export function formatAddress(loc: PracticeLocationDto): string {
   const regionPostal = [loc.stateRegion, loc.postalCode].filter(Boolean).join(" ");

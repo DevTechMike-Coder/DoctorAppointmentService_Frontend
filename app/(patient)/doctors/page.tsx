@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Stethoscope, ArrowRight } from "lucide-react";
+import { Search, Stethoscope, ArrowRight, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useDoctors } from "@/hooks/useDoctors";
 import { Avatar } from "@/components/Avatar";
+import { formatCityLine } from "@/lib/location";
 import type { DoctorDto } from "@/lib/types";
 
 export default function DoctorsPage() {
@@ -20,7 +21,8 @@ export default function DoctorsPage() {
     const matchesQuery =
       query.trim() === "" ||
       d.fullName.toLowerCase().includes(query.toLowerCase()) ||
-      d.specialization.toLowerCase().includes(query.toLowerCase());
+      d.specialization.toLowerCase().includes(query.toLowerCase()) ||
+      (d.primaryCity ?? "").toLowerCase().includes(query.trim().toLowerCase());
     const matchesSpecialty = activeSpecialty === "All" || d.specialization === activeSpecialty;
     return matchesQuery && matchesSpecialty;
   });
@@ -53,7 +55,7 @@ export default function DoctorsPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by doctor name or specialty..."
+            placeholder="Search by doctor name, specialty or city..."
             className="w-full rounded-2xl border border-ink/15 bg-white pl-11 pr-4 py-3.5 text-sm text-ink placeholder:text-ink/35 outline-none focus:ring-2 focus:ring-teal focus:border-teal transition shadow-xs"
           />
         </motion.div>
@@ -194,6 +196,15 @@ function DoctorCard({
               <span className="text-ink/30 font-normal truncate">· {doctor.qualifications}</span>
             )}
           </div>
+
+          {doctor.primaryCity && (
+            <div className="flex items-center gap-1.5 text-xs text-ink/50 mb-3">
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {formatCityLine(doctor.primaryCity, doctor.primaryCountry)}
+              </span>
+            </div>
+          )}
 
           <p className="text-sm text-ink/60 leading-relaxed line-clamp-2 font-light">
             {doctor.bio}
