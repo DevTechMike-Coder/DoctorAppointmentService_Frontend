@@ -90,3 +90,33 @@ export interface ErrorResponse {
   path: string;
   details?: string[];
 }
+
+/** A doctor's workplace. Matches backend PracticeLocationDto. */
+export interface PracticeLocationDto {
+  id: number;
+  facilityName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  stateRegion: string | null;
+  postalCode: string | null;
+  /** ISO 3166-1 alpha-2, upper-case. */
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+  primary: boolean;
+}
+
+/** Payload for POST/PUT /doctors/profile/locations. Lat/lng must be supplied together or not at all. */
+export interface PracticeLocationRequest {
+  facilityName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  stateRegion: string | null;
+  postalCode: string | null;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+  primary: boolean;
+}

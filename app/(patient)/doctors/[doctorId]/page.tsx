@@ -8,9 +8,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { useDoctors } from "@/hooks/useDoctors";
 import { useToast } from "@/components/Toast";
 import { Avatar } from "@/components/Avatar";
+import { DoctorLocations } from "@/components/DoctorLocations";
 import { apiFetch, ApiError } from "@/lib/api";
 import { dateKey, formatTime, formatDayLabel } from "@/lib/datetime";
-import type { DoctorDto, AvailabilityDto } from "@/lib/types";
+import type { DoctorDto, AvailabilityDto, PracticeLocationDto } from "@/lib/types";
 
 export default function DoctorProfilePage() {
   const { doctorId } = useParams<{ doctorId: string }>();
@@ -20,6 +21,7 @@ export default function DoctorProfilePage() {
 
   const [doctor, setDoctor] = useState<DoctorDto | null>(null);
   const [slots, setSlots] = useState<AvailabilityDto[]>([]);
+  const [locations, setLocations] = useState<PracticeLocationDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,11 +37,14 @@ export default function DoctorProfilePage() {
       setLoading(true);
       setError(null);
       try {
-        const [doctorData, slotsData] = await Promise.all([
+        const [doctorData, slotsData, locationsData] = await Promise.all([
           apiFetch<DoctorDto>(`/doctors/${doctorId}`),
           fetchDoctorSlots(Number(doctorId)),
+          // Locations are supplementary: a failure here must not block booking.
+          apiFetch<PracticeLocationDto[]>(`/doctors/${doctorId}/locations`).catch(() => []),
         ]);
         setDoctor(doctorData);
+        setLocations(locationsData);
         const openSlots = slotsData.filter((s) => !s.isBooked);
         setSlots(openSlots);
         if (openSlots.length > 0) {
@@ -131,6 +136,8 @@ export default function DoctorProfilePage() {
               <p className="text-sm text-ink/65 leading-relaxed font-light">{doctor.bio}</p>
             </div>
           </motion.div>
+
+          <DoctorLocations locations={locations} />
 
           {days.length === 0 ? (
             <motion.div

@@ -9,6 +9,7 @@ import { useToast } from "@/components/Toast";
 import { Avatar } from "@/components/Avatar";
 import { ApiError } from "@/lib/api";
 import { resizeToAvatar } from "@/lib/image";
+import { PracticeLocationsManager } from "@/components/PracticeLocationsManager";
 
 const SPECIALTIES = [
   "Cardiology",
@@ -346,6 +347,10 @@ export default function DoctorProfilePage() {
               </motion.button>
             </div>
           </motion.form>
+
+          <div className="lg:col-start-2">
+            <PracticeLocationsManager hasProfile={profile !== null} />
+          </div>
         </div>
       </div>
     </div>
