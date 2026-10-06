@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useDoctorProfile } from "@/hooks/useDoctorProfile";
 import { useDoctorAppointments } from "@/hooks/useDoctorAppointments";
 import { useToast } from "@/components/Toast";
+import JoinCallButton from "@/components/JoinCallButton";
 import { ApiError } from "@/lib/api";
 import type { AppointmentDto, AppointmentStatus } from "@/lib/types";
 
@@ -271,6 +272,7 @@ function AppointmentRow({
           )}
           {appt.status === "CONFIRMED" && (
             <>
+              <JoinCallButton appt={appt} />
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}

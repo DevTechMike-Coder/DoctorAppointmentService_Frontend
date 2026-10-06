@@ -5,6 +5,7 @@ import { Calendar, Clock, X, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useToast } from "@/components/Toast";
+import JoinCallButton from "@/components/JoinCallButton";
 import { ApiError } from "@/lib/api";
 import type { AppointmentDto, AppointmentStatus } from "@/lib/types";
 
@@ -173,6 +174,8 @@ function AppointmentRow({
             <span>{formatTime(appt.startTime)}</span>
           </div>
         </div>
+
+        <JoinCallButton appt={appt} />
 
         {canCancel && (
           <motion.button

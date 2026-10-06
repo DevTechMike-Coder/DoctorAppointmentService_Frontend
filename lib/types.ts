@@ -123,3 +123,8 @@ export interface PracticeLocationRequest {
   longitude: number | null;
   primary: boolean;
 }
+
+/** Response of POST /appointments/{id}/meeting — per-user video-call URL (contains a short-lived token). */
+export interface MeetingJoinResponse {
+  joinUrl: string;
+}
