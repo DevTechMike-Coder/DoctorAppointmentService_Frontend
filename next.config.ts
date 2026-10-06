@@ -7,7 +7,6 @@ const raw = (process.env.BACKEND_URL ?? "http://localhost:8080").trim();
 const BACKEND_URL = (/^https?:\/\//.test(raw) ? raw : `https://${raw}`).replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   async rewrites() {
     return [
       {
